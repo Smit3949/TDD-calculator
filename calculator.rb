@@ -2,7 +2,9 @@ class Calculator
   def self.add(numbers)
     return 0 if numbers.strip.empty?
     sum = 0
-    numbers.split(/[,\n]/).map do |number|
+    delimiter = /[,\n]/
+    negative_numbers = []
+    numbers.split(delimiter).map do |number|
         number.strip!
         if number.match?(/[^0-9\-]/)
             invalid_char = number[/[^0-9\-]/]
@@ -10,10 +12,11 @@ class Calculator
             raise "Unexpected #{invalid_char} at position #{error_position}"
         end
         begin
-            int_number = number == "" ? 0 : Integer(number)
+            int_number = number.strip == "" ? 0 : Integer(number)
         rescue ArgumentError
             raise "Cannot convert #{number} to Integer"
         end
+        negative_numbers << int_number if int_number < 0
         raise "Negative numbers not allowed: #{int_number}" if int_number < 0
         sum += int_number
     end
@@ -140,6 +143,115 @@ RSpec.describe ::Calculator, type: :helper do
 
         it 'handles empty entries between commas as zero' do
             expect(Calculator.add("1\n \n3")).to eq(4)
+        end
+    end
+
+    describe 'with delimiters' do
+        it 'supports custom delimiters' do
+            expect(Calculator.add("//;\n1;2")).to eq(3)
+            expect(Calculator.add("//|\n1|2|3")).to eq(6)
+        end
+
+        it 'supports multi-character custom delimiter' do
+            expect(Calculator.add("//***\n1***2***3")).to eq(6)
+        end
+
+        it 'handles delimiter with regex special characters' do
+            expect(Calculator.add("//.\n1.2.3")).to eq(6)
+        end
+
+        it 'processes hyphen delimiter with potential negative numbers' do
+            expect(Calculator.add("//-\n1-2-3")).to eq(6)
+            expect(Calculator.add("//-\n-1--2-3")).to eq(6)
+        end
+
+        it 'handles mixed-character delimiter' do
+            expect(Calculator.add("//*%\n1*%2*%3")).to eq(6)
+        end
+
+        it 'rejects empty delimiter (treats as zero-width split)' do
+            expect { Calculator.add("//\n1,2") }.to raise_error(/Unexpected ,/)
+        end
+
+        it 'processes numeric delimiter' do
+            expect(Calculator.add("//12\n3124")).to eq(7)
+        end
+
+        it 'handles backslash delimiter' do
+            expect(Calculator.add("//\\\\\n1\\\\2\\\\3")).to eq(6)
+        end
+
+        it 'supports newline as explicit delimiter' do
+            expect(Calculator.add("//\n\n1\n2\n3")).to eq(6)
+        end
+
+        it 'handles consecutive custom delimiters' do
+            expect(Calculator.add("//;\n1;;2;;;3")).to eq(6)
+        end
+
+        it 'errors on mixed delimiters with custom set' do
+            expect { Calculator.add("//;\n1;2\n3") }.to raise_error("Unexpected \n at position 3")
+        end
+
+        it 'processes numbers wrapped in delimiters' do
+            expect(Calculator.add("//;\n;1;;2;")).to eq(3)
+        end
+
+        it 'handles whitespace-containing delimiter' do
+            expect(Calculator.add("//  ,  \n1  ,  2  ,  3")).to eq(6)
+        end
+
+        it 'processes tab delimiter' do
+            expect(Calculator.add("//\t\n1\t2\t3")).to eq(6)
+        end
+
+        it 'supports multi-character custom delimiter' do
+            expect { Calculator.add("//***\n-1***2***3") }.to raise_error("Negative numbers not allowed: -1")
+        end
+
+        it 'handles delimiter with regex special characters' do
+            expect { Calculator.add("//.\n1.-2.3") }.to raise_error("Negative numbers not allowed: -2")
+        end
+
+        it 'handles mixed-character delimiter' do
+            expect { Calculator.add("//*%\n1*%-2*%3") }.to raise_error("Negative numbers not allowed: -2")
+        end
+
+        it 'rejects empty delimiter (treats as zero-width split)' do
+            expect { Calculator.add("//\n1,-2") }.to raise_error(/Unexpected ,/)
+        end
+
+        it 'processes numeric delimiter' do
+            expect { Calculator.add("//12\n-3124") }.to raise_error("Negative numbers not allowed: -3")
+        end
+
+        it 'handles backslash delimiter' do
+            expect { Calculator.add("//\\\\\n1\\\\-2\\\\3") }.to raise_error("Negative numbers not allowed: -2")
+        end
+
+        # assumtion -> \n as delimiter not allowed 
+        it 'supports newline as explicit delimiter' do
+            expect { Calculator.add("//\n\n1\n-2\n3") }.to raise_error("Cannot convert - to Integer")
+        end
+
+        it 'handles consecutive custom delimiters' do
+            expect { Calculator.add("//;\n1;;-2;;;3") }.to raise_error("Negative numbers not allowed: -2")
+        end
+
+        it 'errors on mixed delimiters with custom set' do
+            expect { Calculator.add("//;\n1;-2\n3") }.to raise_error("Unexpected \n at position 4")
+        end
+
+        it 'processes numbers wrapped in delimiters' do
+            expect { Calculator.add("//;\n;1;;-2;") }.to raise_error("Negative numbers not allowed: -2")
+        end
+
+        it 'handles whitespace-containing delimiter' do
+            expect { Calculator.add("//  ,  \n1  ,  -2  ,  3") }.to raise_error("Negative numbers not allowed: -2")
+        end
+
+        it 'processes tab delimiter' do
+            expect { Calculator.add("//\t\n1\t-2\t3") }.to raise_error("Negative numbers not allowed: -2")
         end
     end
   end

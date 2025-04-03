@@ -22,9 +22,9 @@ class Calculator
             raise "Cannot convert #{number} to Integer"
         end
         negative_numbers << int_number if int_number < 0
-        raise "Negative numbers not allowed: #{int_number}" if int_number < 0
         sum += int_number
     end
+    raise "Negative numbers not allowed: #{negative_numbers.join(', ')}" if negative_numbers.length > 0
     sum
   end
 end
@@ -61,7 +61,7 @@ RSpec.describe ::Calculator, type: :helper do
     end
 
     it 'handles multiple negative numbers and reports the first negative' do
-        expect { Calculator.add("-1,-2,3") }.to raise_error("Negative numbers not allowed: -1")
+        expect { Calculator.add("-1,-2,3") }.to raise_error("Negative numbers not allowed: -1, -2")
     end
 
     it 'raises an error for a single negative number' do
@@ -131,7 +131,7 @@ RSpec.describe ::Calculator, type: :helper do
         end
 
         it 'handles multiple negative numbers and reports the first negative' do
-            expect { Calculator.add("-1\n-2\n3") }.to raise_error("Negative numbers not allowed: -1")
+            expect { Calculator.add("-1\n-2\n3") }.to raise_error("Negative numbers not allowed: -1, -2")
         end
 
         it 'processes numbers with leading zeros correctly' do

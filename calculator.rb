@@ -91,5 +91,56 @@ RSpec.describe ::Calculator, type: :helper do
     it 'processes whitespace-only input as zero' do
         expect(Calculator.add("   ")).to eq(0)
     end
+
+    it 'handles newline characters within numbers' do
+      expect(Calculator.add("1\n2,3")).to eq(6)
+    end
+
+    it 'returns 0 for an empty string with only \n in string' do
+      expect(Calculator.add("\n\n\n")).to eq(0)
+    end
+
+    describe 'with newline characters' do
+        it 'returns the number itself when a single number is provided' do
+            expect(Calculator.add("\n1")).to eq(1)
+            expect(Calculator.add("\n10")).to eq(10)
+        end
+
+        it 'returns the sum of multiple numbers with multiple digits' do
+            expect(Calculator.add("10\n20\n30,40")).to eq(100)
+        end
+
+        it 'handles spaces around numbers' do
+            expect(Calculator.add(" 1 \n 2 , 3 ")).to eq(6)
+        end
+
+        it 'handles unexpected characters within numbers' do
+            expect { Calculator.add("1;2,3\n4") }.to raise_error("Unexpected ; at position 1")
+        end
+
+        it 'raises an error for negative numbers' do
+            expect { Calculator.add("1\n-2,3") }.to raise_error("Negative numbers not allowed: -2")
+        end
+
+        it 'handles multiple negative numbers and reports the first negative' do
+            expect { Calculator.add("-1\n-2\n3") }.to raise_error("Negative numbers not allowed: -1")
+        end
+
+        it 'processes numbers with leading zeros correctly' do
+            expect(Calculator.add("0005\n03")).to eq(8)
+        end
+
+        it 'handles very large numbers' do
+            expect(Calculator.add("9999999999999999999\n1")).to eq(10000000000000000000)
+        end
+
+        it 'reports the first invalid character in mixed valid/invalid input' do
+            expect { Calculator.add("1\na,3") }.to raise_error("Unexpected a at position 2")
+        end
+
+        it 'handles empty entries between commas as zero' do
+            expect(Calculator.add("1\n \n3")).to eq(4)
+        end
+    end
   end
 end

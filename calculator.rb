@@ -2,7 +2,7 @@ class Calculator
   def self.add(numbers)
     return 0 if numbers.strip.empty?
     sum = 0
-    numbers.split(',').map do |number|
+    numbers.split(/[,\n]/).map do |number|
         number.strip!
         if number.match?(/[^0-9\-]/)
             invalid_char = number[/[^0-9\-]/]

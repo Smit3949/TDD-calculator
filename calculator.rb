@@ -3,6 +3,11 @@ class Calculator
     return 0 if numbers.strip.empty?
     sum = 0
     delimiter = /[,\n]/
+    if numbers.start_with?("//")
+      parts = numbers.split("\n", 2)
+      delimiter = parts[0][2..-1]
+      numbers = parts[1]
+    end
     negative_numbers = []
     numbers.split(delimiter).map do |number|
         number.strip!
